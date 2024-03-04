@@ -19,7 +19,8 @@ import FileWithUrl from '@/class/file-with-url'
 import defaultScene from '@/assets/image/default_scene.png'
 export enum ProjectSource {
   local = 'local',
-  cloud = 'cloud'
+  cloud = 'cloud',
+  public = 'public'
 }
 
 export interface ProjectSummary {
@@ -108,8 +109,8 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isUser)
-    const projects = res.data
-    return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
+    const projects = res.data || []
+    return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
   /**
@@ -119,8 +120,10 @@ export class Project implements ProjectDetail, ProjectSummary {
   static async getProjects(source: ProjectSource): Promise<ProjectSummary[]>  {
     if (source == ProjectSource.local) {
       return Project.getLocalProjects()
-    }else {
-      return Project.getCloudProjects()
+    }else if (source == ProjectSource.cloud) {
+      return Project.getCloudProjects(1, 300, true)
+    } else {
+      return Project.getCloudProjects(1, 300, false)
     }
   }
 

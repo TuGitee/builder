@@ -11,7 +11,7 @@ import {
 import saveAs from 'file-saver'
 import { SoundList, SpriteList } from '@/class/asset-list'
 import { Backdrop } from '@/class/backdrop'
-import { getProject, getProjects, saveProject } from '@/api/project'
+import { getProject, getProjects, saveProject, publicProject } from '@/api/project'
 import { Sprite } from './sprite'
 import { Sound } from './sound'
 import type { Config } from '@/interface/file'
@@ -108,20 +108,12 @@ export class Project implements ProjectDetail, ProjectSummary {
 
   static async getCloudProjects(pageIndex: number = 1, pageSize: number = 300, isUser: boolean = true): Promise<ProjectSummary[]> {
     const res = await getProjects(pageIndex, pageSize, isUser)
-    const projects = res.data
-    return projects.map((project) => ({ ...project, source: ProjectSource.cloud })) || []
+    const projects = res.data || []
+    return projects.map((project) => ({ ...project, source: ProjectSource.cloud }))
   }
 
-  /**
-   * Get the list of projects.
-   * @returns The list of local projects' summary
-   */
-  static async getProjects(source: ProjectSource): Promise<ProjectSummary[]>  {
-    if (source == ProjectSource.local) {
-      return Project.getLocalProjects()
-    }else {
-      return Project.getCloudProjects()
-    }
+  static async publicProject(id: number): Promise<void> {
+    await publicProject(id)
   }
 
   constructor() {

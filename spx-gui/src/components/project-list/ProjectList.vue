@@ -7,16 +7,14 @@
       </div>
     </template>
 
-    <n-tabs v-model:value="currentSource" default-value="local" justify-content="space-evenly" size="large">
-      <n-tab-pane name="local" tab="Local">
-      </n-tab-pane>
-      <n-tab-pane name="cloud" tab="Cloud">
+    <n-tabs v-model:value="state.currentTab" justify-content="space-evenly" size="large" @update:value="onTabChange">
+      <n-tab-pane v-for="item in state.tabs" :key="item" :name="item">
       </n-tab-pane>
     </n-tabs>
 
     <div class="container">
-        <n-grid v-if="currentProjects.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
-          <n-grid-item v-for="project in currentProjects" :key="project.id">
+        <n-grid v-if="currentList.length" cols="2 m:3 l:3 xl:4 2xl:5" x-gap="10" y-gap="15" responsive="screen">
+          <n-grid-item v-for="project in currentList" :key="project.id">
             <ProjectCard :project="project" @load-project="closeModalFunc"/>
           </n-grid-item>
         </n-grid>
@@ -26,11 +24,10 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, defineEmits, defineProps, onMounted, ref} from 'vue'
-import { NModal, NGrid, NGridItem, NInput, NEmpty, NTabs, NTabPane } from 'naive-ui'
-import {Project, ProjectSource, type ProjectSummary} from '@/class/project';
+import {computed, type ComputedRef, defineEmits, defineProps, onMounted, reactive, ref, watch} from 'vue'
+import {NEmpty, NGrid, NGridItem, NInput, NModal, NTabPane, NTabs} from 'naive-ui'
+import {Project, type ProjectSummary} from '@/class/project';
 import ProjectCard from './ProjectCard.vue'
-import { watch } from 'vue';
 
 // ----------props & emit------------------------------------
 const props = defineProps({
@@ -43,35 +40,39 @@ const emits = defineEmits(['update:show'])
 
 // ----------data related -----------------------------------
 // Ref about search text.
-const showModal = ref<boolean>(false)
-const currentSource = ref<ProjectSource>(ProjectSource.local)
-const searchQuery = ref('')
-const localProjects = ref<ProjectSummary[]>([])
-const cloudProjects = ref<ProjectSummary[]>([])
+enum TabEnum {
+  local = 'Local',
+  cloud = 'Cloud',
+  public = 'Public'
+}
 
-// Computed properties to filter projects based on search query
-const filteredLocalProjects = computed(() => {
-  return localProjects.value.filter(project => project.name?.includes(searchQuery.value))
+const showModal = ref<boolean>(false)
+const searchQuery = ref('')
+const projectList = ref<ProjectSummary[]>([])
+const currentList: ComputedRef<ProjectSummary[]> = computed(() => {
+  return projectList.value.filter(project => project.name?.includes(searchQuery.value))
 })
-const filteredCloudProjects = computed(() => {
-  return cloudProjects.value.filter(project => project.name?.includes(searchQuery.value))
+
+const state = reactive({
+  tabs: TabEnum,
+  currentTab: TabEnum.local,
 })
-const currentProjects = computed(() => {
-  return currentSource.value === ProjectSource.local ? filteredLocalProjects.value : filteredCloudProjects.value
-})
+// const activeTab = state.tabs[0]
+
+const onTabChange = (index: TabEnum) => {
+  // Reset search query when switching sources
+  searchQuery.value = ''
+  state.currentTab = index
+  getProjects()
+}
 
 watch(() => props.show, (newShow) => {
   showModal.value = newShow
   if (newShow) getProjects()
 })
 
-watch(currentSource, () => {
-  // Reset search query when switching sources
-  searchQuery.value = ''
-})
-
-onMounted(async () => {
-  await getProjects()
+onMounted( () => {
+  getProjects()
 })
 
 // ----------methods-----------------------------------------
@@ -80,8 +81,14 @@ const closeModalFunc = () => {
 }
 
 const getProjects = async () => {
-  localProjects.value = await Project.getProjects(ProjectSource.local)
-  cloudProjects.value = await Project.getProjects(ProjectSource.cloud)
+  const type = state.currentTab
+  if (type == TabEnum.local) {
+    projectList.value = await Project.getLocalProjects()
+  }else if (type == TabEnum.cloud) {
+    projectList.value = await Project.getCloudProjects(1, 300, true)
+  } else {
+    projectList.value = await Project.getCloudProjects(1, 300, false)
+  }
 }
 
 </script>

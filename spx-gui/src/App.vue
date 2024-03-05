@@ -6,6 +6,7 @@
  * @FilePath: /builder/spx-gui/src/App.vue
  * @Description:
 -->
+
 <template>
   <div id="spx">
     <n-config-provider :theme-overrides="themeOverrides">
@@ -71,7 +72,7 @@ const themeOverrides = {
   Input: {
     // caretColor: "#F1518A",
     borderHover: "1px solid #FF81A7",
-    borderRadius:"25px",
+    borderRadius: "25px",
     // border: "1px solid #FF81A7",
     borderFocus: "1px solid #FF81A7",
   },
@@ -135,6 +136,7 @@ body {
 .n-menu--responsive {
   --n-item-height: 38px !important;
 }
+
 .n-menu.n-menu--horizontal .n-menu-item-content {
   padding: 0;
 }
@@ -145,5 +147,11 @@ body {
   overflow: hidden;
   flex-direction: row;
   justify-content: space-around;
+}
+
+.n-dialog {
+  .n-dialog__icon {
+    line-height: 1;
+  }
 }
 </style>

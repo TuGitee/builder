@@ -49,7 +49,11 @@ export interface ProjectSummary {
   // create time
   cTime?: string
   // update time
-  uTime?: string
+  uTime?: string,
+  // public status
+  isPublic?: number,
+  // author
+  authorId?: string
 }
 
 interface ProjectDetail {

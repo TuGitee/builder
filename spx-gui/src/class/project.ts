@@ -1,5 +1,5 @@
 import type { DirPath, FileType, RawDir } from '@/types/file'
-import * as fs from '@/util/file-system'
+import * as storage from '@/util/storage'
 import { nanoid } from 'nanoid'
 import {
   arrayBuffer2Content,
@@ -98,10 +98,10 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   static async getLocalProjects(): Promise<ProjectSummary[]> {
-    const paths = await fs.readdir('summary/')
+    const paths = await storage.getWithPrefix('summary/')
     const projects: ProjectSummary[] = []
     for (const path of paths) {
-      const content = await fs.readFile(path) as ProjectSummary
+      const content = await storage.get(path) as ProjectSummary
       projects.push(content)
     }
     return projects.map((project) => ({ ...project, source: ProjectSource.local }))
@@ -118,8 +118,8 @@ export class Project implements ProjectDetail, ProjectSummary {
   }
 
   static async removeLocalProject(id: string) {
-    await fs.rmdir(id)
-    await fs.unlink("summary/" + id)
+    await storage.removeWithPrefix(id)
+    await storage.remove("summary/" + id)
   }
   
   static async removeProject(id: string, source: ProjectSource = ProjectSource.cloud) {
@@ -152,18 +152,18 @@ export class Project implements ProjectDetail, ProjectSummary {
       } else {
         this._id = id
       }
-      const paths = (await fs.readdir(id)) as string[]
+      const paths = (await storage.getWithPrefix(id)) as string[]
       if (!paths.length) {
         throw new Error('Project not found')
       }
 
       const dirPath: DirPath = {}
       for (const path of paths) {
-        dirPath[path] = await fs.readFile(path)
+        dirPath[path] = await storage.get(path)
       }
       this._load(dirPath)
 
-      const summary = await fs.readFile("summary/" + id) as ProjectSummary
+      const summary = await storage.get("summary/" + id) as ProjectSummary
       this.name = summary.name
       this.version = summary.version
       this.cTime = summary.cTime || this.cTime
@@ -273,7 +273,7 @@ export class Project implements ProjectDetail, ProjectSummary {
   async saveLocal() {
     const dirPath = await this.dirPath
     for (const [key, value] of Object.entries(dirPath)) {
-      await fs.writeFile(key, value)
+      await storage.set(key, value)
     }
     const summary: ProjectSummary = {
       id: this.id,
@@ -283,7 +283,7 @@ export class Project implements ProjectDetail, ProjectSummary {
       cTime: this.cTime,
       uTime: new Date().toISOString(),
     }
-    await fs.writeFile(this.summaryPath, summary)
+    await storage.set(this.summaryPath, summary)
   }
 
   /**
